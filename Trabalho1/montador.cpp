@@ -140,7 +140,11 @@ void one_pass_algorithm(char* fileName){
   bool textSection = false;
   bool constFlag = false;
   bool newSymbol = false;
+  bool rotFlag = false;
+  char lastX = '!'; //any character different
   string symbolFound = "";
+
+//fazer uma passagem pra tirar tabulações e espaços
 
 
   while (getline (MyReadFile, myText)) { // Read line by line till it reaches end of file
@@ -173,11 +177,19 @@ void one_pass_algorithm(char* fileName){
     if(textSection){
         myText = myText + "\n";
         token = "";
+        lastX = '!';
+				opcodeFlag = false;
         for (auto x: myText){
 
-          if(x == ' ' && opcodeFlag == false){
+					if(lastX == ';'){
+						break;
+					}
+
+          if(x == ' ' && (lastX == ' ' || lastX == ':')){
+            token = "";
+          }
+          else if((x == ' ' || x == '\n') && opcodeFlag == false){
             //token
-            
             opcode = token_table(token);
             switch (opcode){
               case add:
@@ -246,7 +258,6 @@ void one_pass_algorithm(char* fileName){
               SymbolTableElements element = {token, posCount, true, -1};
               symbolTable.push_back(element);
             }
-            //posCount++;
             cout << token << endl;
             token = "";
           }
@@ -279,12 +290,16 @@ void one_pass_algorithm(char* fileName){
               posCount++;
             }
             token = "";
-            opcodeFlag = false;
+            if(opcode != copy){
+            	opcodeFlag = false;
+						}
+
           }
           else {
             token = token + x;
             //cout << '\"' <<  token << '\"'<< endl;
           }
+          lastX = x;
           //cout << "x atual \"" << x << "\""<< endl;
         }
         
