@@ -3,6 +3,7 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <sstream>
 using namespace std;
 
 #define ADD 1
@@ -62,6 +63,55 @@ void print_ST(vector<SymbolTableElements> v)
 }
 
 // END OF DEBUG FUNCTIONS
+
+string preprocessing(char* fileName)
+{
+	string myText;
+	ifstream MyReadFile(fileName);
+	string codePreprocessed;
+	char lastX;
+	string line;
+	int count = 0;
+	bool addChar = true;
+
+	while (getline (MyReadFile, myText))
+	{
+		line = "";
+		count = 0;
+		for (auto x: myText)
+		{
+			addChar = true;
+			if(x == '\t')
+			{
+				x = ' ';
+			}
+			if(count == 0 && (x == ' ' || x == '\t'))
+			{
+				addChar = false;
+			}
+			else
+			{
+				count++;
+			}
+			if(x == ' ' && lastX == ' ')
+			{
+				addChar = false;
+			}
+			if(addChar)
+			{
+				line = line + x;
+			}
+
+			lastX = x;
+		}
+		line = line + '\n';
+		codePreprocessed = codePreprocessed + line;
+	}
+
+	cout << codePreprocessed;
+	MyReadFile.close();
+	return codePreprocessed;
+}
 
 int token_table(string token){
 	if(token.compare("ADD") == 0)
@@ -132,11 +182,9 @@ int token_table(string token){
 	return -1;
 }
 
-
-void one_pass_algorithm(char* fileName)
+void one_pass_algorithm(string codePreprocessed)
 {
 	string myText;
-	ifstream MyReadFile(fileName);
 	int lineCount = 0;
 	int posCount = 0;
 	string token; 
@@ -152,10 +200,12 @@ void one_pass_algorithm(char* fileName)
 	char lastX = '!'; //any character different
 	string symbolFound = "";
 
+	istringstream iss(codePreprocessed);
+
 //fazer uma passagem pra tirar tabulações e espaços
 
 
-	while (getline (MyReadFile, myText)) // Read line by line till it reaches end of file
+	while (getline (iss, myText)) // Read line by line till it reaches end of file
 	{ 
 		std::transform(myText.begin(), myText.end(), myText.begin(), ::toupper);
 		lineCount++;
@@ -167,7 +217,7 @@ void one_pass_algorithm(char* fileName)
 			print_ST(symbolTable);
 			textSection = true;
 			dataSection = false;
-			getline (MyReadFile, myText);
+			getline (iss, myText);
 			std::transform(myText.begin(), myText.end(), myText.begin(), ::toupper);
 			lineCount++;
     	}
@@ -179,7 +229,7 @@ void one_pass_algorithm(char* fileName)
 			cout  << endl;
 			textSection = false;
 			dataSection = true;
-			getline (MyReadFile, myText);
+			getline (iss, myText);
 			std::transform(myText.begin(), myText.end(), myText.begin(), ::toupper);
 			lineCount++;
 		}
@@ -325,7 +375,7 @@ void one_pass_algorithm(char* fileName)
             		//cout << '\"' <<  token << '\"'<< endl;
           		}
 				lastX = x;
-          		//cout << "x atual \"" << x << "\""<< endl;
+          		//cout << "x atual \"" << x getline<< "\""<< endl;
         	}
         	//cout << lineCount << myText << '\n';      
 			print_vector(code);
@@ -412,11 +462,15 @@ void one_pass_algorithm(char* fileName)
 	}
 
 	//Pass through symbol table
+	cout << " Passar pela ST" << endl;
 	print_ST(symbolTable);
-	for(int i; i < symbolTable.size(); i++)
+	cout << symbolTable.size() << endl;
+	for(int i = 0; i < symbolTable.size(); i++)
 	{
+		cout << " Passar pela ST" << endl;
 		if(!symbolTable[i].def)
 		{
+			cout << symbolTable[i].symbol << endl;
 			code.push_back(symbolTable[i].value);
 			symbol = symbolTable[i].list;
 			symbolTable[i].value = posCount;
@@ -444,17 +498,19 @@ void one_pass_algorithm(char* fileName)
 
   	print_vector(code);
   	print_ST(symbolTable);
-  	MyReadFile.close();
+  	
 }
 
 int main(int argc, char *argv[]) 
 {
+	string codePreprocessed;
 	//pensar em criar a tabela de instruções
 	if(argc < 2)
 	{
 		cout << "Arquivo não repassado na linha de comando" << '\n';
 		return 0;
 	}
-	one_pass_algorithm(argv[1]);
+	codePreprocessed = preprocessing(argv[1]);
+	one_pass_algorithm(codePreprocessed);
 	return 0;
 } 
