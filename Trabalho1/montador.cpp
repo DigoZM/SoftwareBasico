@@ -49,7 +49,7 @@ void print_vector(vector<int> v)
 	{
 		cout << v[i] << ' ';
 	}
-	cout << endl;
+	cout << endl << endl;
 }
 
 void print_ST(vector<SymbolTableElements> v)
@@ -290,7 +290,7 @@ void one_pass_algorithm(char* fileName)
             		if (search != symbolTable.end())
 					{
               			cout << "simbolo ja definido" << endl;
-              			if(search->def)
+              			if(search->def) //nao vai mais acontecer
 						{
                 			cout << "tem posição" << endl;
                 			code.push_back(search->value);
@@ -328,46 +328,47 @@ void one_pass_algorithm(char* fileName)
           		//cout << "x atual \"" << x << "\""<< endl;
         	}
         	//cout << lineCount << myText << '\n';      
+			print_vector(code);
 		}
     	if(dataSection)
 		{
     		myText = myText + "\n";
     		token = "";
+			SymbolTableElements element;
     		for (auto x: myText)
 			{
         		if(x == ':')
 				{
           			//simbolo
           			cout << "DATA achei simbolo: " << token << endl;
-        			auto search = find_if(symbolTable.begin(), symbolTable.end(), 
-        			             [&token] (SymbolTableElements const& d) { 
-        			                return d.symbol == token; 
-        			             });
-          			if (search != symbolTable.end())
-					{
-            			cout << "simbolo ja definido" << endl;
-            			// FAZER ESSA PARTE DE COLOCAR NA TABELA O VALOR E IR PREENCHENDO OS VALORES
-            			newSymbol = false;
-            			symbolFound = search->symbol;
-            			search->value = posCount;
-            			search->def = true;
+        			// auto search = find_if(symbolTable.begin(), symbolTable.end(), 
+        			//              [&token] (SymbolTableElements const& d) { 
+        			//                 return d.symbol == token; 
+        			//              });
+          			// if (search != symbolTable.end())
+					// {
+            		// 	cout << "simbolo ja definido" << endl;
+            		// 	// FAZER ESSA PARTE DE COLOCAR NA TABELA O VALOR E IR PREENCHENDO OS VALORES
+            		// 	newSymbol = false;
+            		// 	symbolFound = search->symbol;
+            		// 	//search->value = posCount;
+            		// 	//search->def = true;
 
-          			}
-					else
-					{
-            			cout << "simbolo nao definido" << endl;
-            			SymbolTableElements element = {token, posCount, true, -1};
-            			symbolTable.push_back(element);
-            			newSymbol = true;
-          			}
+          			// }
+					// else
+            		//	cout << "simbolo nao definido" << endl;
+            		element = {token, 0, false, -1};
+					symbolFound = token;
+            			//symbolTable.push_back(element);
+            		//	newSymbol = true;
           			token = "";
         		} 
 				else if(x == '\n' && constFlag)
 				{
 		        	//verificar se token é int
 		        	cout << "Valor do const: " << token << endl;
-		        	code.push_back(stoi(token));
-		        	posCount++;
+					element.value = stoi(token);
+		        	//code.push_back(stoi(token));
 		        	constFlag = false;
 		        	token = "";
         		}
@@ -381,8 +382,7 @@ void one_pass_algorithm(char* fileName)
               				constFlag = true;
               				break;
             			case SPACE:
-              				code.push_back(00);
-              				posCount++;
+              				element.value = 0;
               				break;
           			}
           			token = "";
@@ -396,25 +396,52 @@ void one_pass_algorithm(char* fileName)
           			token = token + x;
         		}
       		}
-      		if(!newSymbol)
+			auto search = find_if(symbolTable.begin(), symbolTable.end(), 
+        	 [&symbolFound] (SymbolTableElements const& d) { 
+        	    return d.symbol == symbolFound; 
+        	 });
+          	if (search != symbolTable.end())
 			{
-        		//print_ST(symbolTable);
-        		auto search = find_if(symbolTable.begin(), symbolTable.end(), 
-        		               [&symbolFound] (SymbolTableElements const& d) { 
-        		                  return d.symbol == symbolFound; 
-        		               });
-        		symbol = search->list;
-        		//cout << "vou colocar o " << symbol << " no " << posCount << endl;
-        		while (symbol != -1)
-				{
-          			aux = symbol;
-          			symbol = code[aux];
-          			code[aux] = search->value;
-        		}
-        		newSymbol = false;
-      		}
+				search->value = element.value;
+			}
+			else
+			{
+      			symbolTable.push_back(element);
+			}
     	}
 	}
+
+	//Pass through symbol table
+	print_ST(symbolTable);
+	for(int i; i < symbolTable.size(); i++)
+	{
+		if(!symbolTable[i].def)
+		{
+			code.push_back(symbolTable[i].value);
+			symbol = symbolTable[i].list;
+			symbolTable[i].value = posCount;
+			posCount++;
+			symbolTable[i].def = true;
+			while (symbol != -1){
+        		aux = symbol;
+        		symbol = code[aux];
+        		code[aux] = symbolTable[i].value;
+        	}
+		}
+	}
+        		// auto search = find_if(symbolTable.begin(), symbolTable.end(), 
+        		//                [&symbolFound] (SymbolTableElements const& d) { 
+        		//                   return d.symbol == symbolFound; 
+        		//                });
+        		// symbol = search->list;
+        		// //cout << "vou colocar o " << symbol << " no " << posCount << endl;
+        		// while (symbol != -1)
+				// {
+          		// 	aux = symbol;
+          		// 	symbol = code[aux];
+          		// 	code[aux] = search->value;
+        		// }
+
   	print_vector(code);
   	print_ST(symbolTable);
   	MyReadFile.close();
