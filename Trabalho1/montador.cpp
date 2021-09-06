@@ -10,7 +10,7 @@ using namespace std;
 #define SUB 2
 #define MUL 3
 #define DIV 4
-#define jmp 5
+#define JMP 5
 #define JMPN 6
 #define JMPP 7
 #define JMPZ 8
@@ -29,18 +29,17 @@ struct SymbolTableElements
 	int value;
 	bool def;
 	int list;
+	int line;
+	bool isRot;
 };
 
+struct InstructionTableElements
+{
+	int opcode;
+	int words;
+};
 
-// string get_token(string codeLine){
-//   string token;
-
-//   for (int i = 0; i < codeLine.sizu; i++)
-//   {
-//     /* code */
-//   }
-  
-// }
+vector<InstructionTableElements> InstructionTable;
 
 // DEBUG FUNCTIONS
 
@@ -58,11 +57,29 @@ void print_ST(vector<SymbolTableElements> v)
 	cout << "Symbol Table" << endl;
 	for(int i=0; i<v.size(); ++i)
 	{
-		cout << v[i].symbol << " " << v[i].value << " " << v[i].def << " " << v[i].list << endl;
+		cout << v[i].symbol << " " << v[i].value << " " << v[i].def << " " << v[i].list << " " << v[i].line << " " << v[i].isRot << endl;
 	}
 }
 
 // END OF DEBUG FUNCTIONS
+
+void build_instruction_table()
+{
+	InstructionTable.push_back({ADD, 2});
+	InstructionTable.push_back({SUB, 2});
+	InstructionTable.push_back({MUL, 2});
+	InstructionTable.push_back({DIV, 2});
+	InstructionTable.push_back({JMP, 2});
+	InstructionTable.push_back({JMPN, 2});
+	InstructionTable.push_back({JMPP, 2});
+	InstructionTable.push_back({JMPZ, 2});
+	InstructionTable.push_back({COPY, 3});
+	InstructionTable.push_back({LOAD, 2});
+	InstructionTable.push_back({STORE, 2});
+	InstructionTable.push_back({INPUT, 2});
+	InstructionTable.push_back({OUTPUT, 2});
+	InstructionTable.push_back({STOP, 1});
+}
 
 string preprocessing(char* fileName)
 {
@@ -93,7 +110,7 @@ string preprocessing(char* fileName)
 			{
 				count++;
 			}
-			if(x == ' ' && lastX == ' ')
+			if((x == ' ' || x == '\t') && lastX == ' ')
 			{
 				addChar = false;
 			}
@@ -104,11 +121,16 @@ string preprocessing(char* fileName)
 
 			lastX = x;
 		}
+		if(lastX == ' ' || lastX == '\t')
+		{
+			if(!line.empty())
+				line.pop_back();
+		}
 		line = line + '\n';
 		codePreprocessed = codePreprocessed + line;
 	}
 
-	cout << codePreprocessed;
+	//cout << codePreprocessed;
 	MyReadFile.close();
 	return codePreprocessed;
 }
@@ -130,9 +152,9 @@ int token_table(string token){
 	{
 		return DIV;
 	}
-	if (token.compare("jmp") == 0)
+	if (token.compare("JMP") == 0)
 	{
-		return jmp;
+		return JMP;
 	}
 	if (token.compare("JMPN") == 0)
 	{
@@ -189,7 +211,8 @@ void one_pass_algorithm(string codePreprocessed)
 	int posCount = 0;
 	string token; 
 	vector<int> code;
-	int opcode, symbol, aux;
+	int opcode = 1;
+	int symbol, aux;
 	vector<SymbolTableElements> symbolTable;
 	bool opcodeFlag = false;
 	bool dataSection = false;
@@ -199,6 +222,7 @@ void one_pass_algorithm(string codePreprocessed)
 	bool rotFlag = false;
 	char lastX = '!'; //any character different
 	string symbolFound = "";
+	int wordsCount = 0;
 
 	istringstream iss(codePreprocessed);
 
@@ -209,12 +233,12 @@ void one_pass_algorithm(string codePreprocessed)
 	{ 
 		std::transform(myText.begin(), myText.end(), myText.begin(), ::toupper);
 		lineCount++;
-		cout << myText << endl;
+		//cout << myText << endl;
     	if(myText.compare("SECTION TEXT") == 0)
 		{
-			cout << "entrei na text section" << '\n' << '\n';
-			print_vector(code);
-			print_ST(symbolTable);
+			//cout << "entrei na text section" << '\n' << '\n';
+			//print_vector(code);
+			//print_ST(symbolTable);
 			textSection = true;
 			dataSection = false;
 			getline (iss, myText);
@@ -223,10 +247,10 @@ void one_pass_algorithm(string codePreprocessed)
     	}
 		if(myText.compare("SECTION DATA") == 0)
 		{
-			cout << "entrei na data section" << '\n' << '\n';
-			print_vector(code);
-			print_ST(symbolTable);
-			cout  << endl;
+			//cout << "entrei na data section" << '\n' << '\n';
+			//print_vector(code);
+			//print_ST(symbolTable);
+			//cout  << endl;
 			textSection = false;
 			dataSection = true;
 			getline (iss, myText);
@@ -249,89 +273,114 @@ void one_pass_algorithm(string codePreprocessed)
 				{
             		token = "";
           		}
-				else if((x == ' ' || x == '\n') && opcodeFlag == false)
+				else if((x == ' ' || x == '\n') && opcodeFlag == false && !token.empty())
 				{
-            	//token
-            	opcode = token_table(token);
-            	switch (opcode)
-				{
-            		case ADD:
-                		code.push_back(ADD);
-                		break;
-            		case SUB:
-                		code.push_back(SUB);
-                		break;
-            		case MUL:
-                		code.push_back(MUL);
-                		break;
-            		case DIV:
-                		code.push_back(DIV);
-                		break;
-            		case jmp:
-                		code.push_back(jmp);
-                		break;
-            		case JMPN:
-                		code.push_back(JMPN);
-                		break;
-            		case JMPP:
-                		code.push_back(JMPP);
-                		break;
-            		case JMPZ:
-                		code.push_back(JMPZ);
-                		break;
-            		case COPY:
-                		code.push_back(COPY);
-                		break;
-            		case LOAD:
-                		code.push_back(LOAD);
-                		break;
-            		case STORE:
-                		code.push_back(STORE);
-                		break;
-            		case INPUT:
-                		code.push_back(INPUT);
-                		break;
-            		case OUTPUT:
-                		code.push_back(OUTPUT);
-                		break;
-            		case STOP:
-                		code.push_back(STOP);
-                		break;
-            		default:
-                		cout << "erro no opcode na linha" << lineCount << endl;
-                		cout << token << endl;
-                		posCount--;
-                		break;
-            	}
-            	cout << "achei opcode: " << token << endl;
-            	token = "";
-            	posCount++;
-            	opcodeFlag = true;
+            		//token
+            		opcode = token_table(token);
+            		switch (opcode)
+					{
+            			case ADD:
+                			code.push_back(ADD);
+                			break;
+            			case SUB:
+                			code.push_back(SUB);
+                			break;
+            			case MUL:
+                			code.push_back(MUL);
+                			break;
+            			case DIV:
+                			code.push_back(DIV);
+                			break;
+            			case JMP:
+                			code.push_back(JMP);
+                			break;
+            			case JMPN:
+                			code.push_back(JMPN);
+                			break;
+            			case JMPP:
+                			code.push_back(JMPP);
+                			break;
+            			case JMPZ:
+                			code.push_back(JMPZ);
+                			break;
+            			case COPY:
+                			code.push_back(COPY);
+                			break;
+            			case LOAD:
+                			code.push_back(LOAD);
+                			break;
+            			case STORE:
+                			code.push_back(STORE);
+                			break;
+            			case INPUT:
+                			code.push_back(INPUT);
+                			break;
+            			case OUTPUT:
+                			code.push_back(OUTPUT);
+                			break;
+            			case STOP:
+                			code.push_back(STOP);
+                			break;
+            			default:
+							//‌instruções‌ ‌inválidas
+                			cout << "LINHA: " << lineCount << " ERRO SINTATICO" << endl;
+                			cout << "\"" << token << "\"" << endl;
+                			posCount--;
+                			break;
+            		}
+            		//cout << "achei opcode: " << token << endl;
+            		token = "";
+            		posCount++;
+					wordsCount++;
+            		opcodeFlag = true;
         		}
 				else if(x == ':')
 				{
             		//rotulo
             		cout << "achei rotulo: " << token << endl;
+					if(rotFlag)
+					{
+						//dois‌ ‌rótulos‌ ‌na‌ ‌mesma‌ ‌linha
+						cout << "LINHA: " << lineCount << " ERRO SINTATICO" << endl;
+					}
             		auto search = find_if(symbolTable.begin(), symbolTable.end(), 
                     	[&token] (SymbolTableElements const& d) { 
                         	return d.symbol == token; 
                     	});
             		if (search != symbolTable.end())
 					{
-            			cout << "erro rotulo ja definido na linha: " << lineCount << endl;
+						if(search->def == true)
+						{
+						//‌declarações‌ ‌de‌ ‌rótulos‌ ‌repetidos
+            			cout << "LINHA: " << lineCount << " ERRO SEMANTICO!" << endl;
+						}
+						else
+						{
+							symbol = search->list;
+							search->value = posCount;
+							search->def = true;
+							search->isRot = true;
+							while (symbol != -1)
+							{
+        						aux = symbol;
+        						symbol = code[aux];
+        						code[aux] = search->value;
+        					}
+						}
             		} 
 					else
 					{
-              			SymbolTableElements element = {token, posCount, true, -1};
+              			SymbolTableElements element = {token, posCount, true, -1, lineCount, true};
               			symbolTable.push_back(element);
             		}
-            		cout << token << endl;
+            		//cout << token << endl;
             		token = "";
+					rotFlag = true;
           		}
           		else if((x == ' ' || x == '\n' || x == ',') && opcodeFlag == true)
 				{
             		//symbol
-            		cout << "achei simbolo: " << token << endl;
+            		//cout << "achei simbolo: " << token << endl;
             		//search for symbol in ST
             		auto search = find_if(symbolTable.begin(), symbolTable.end(), 
                     		[&token] (SymbolTableElements const& d) { 
@@ -339,16 +388,16 @@ void one_pass_algorithm(string codePreprocessed)
                     	});
             		if (search != symbolTable.end())
 					{
-              			cout << "simbolo ja definido" << endl;
-              			if(search->def) //nao vai mais acontecer
+              			//cout << "simbolo ja definido" << endl;
+              			if(search->def && search->isRot) //nao vai mais acontecer
 						{
-                			cout << "tem posição" << endl;
+                			//cout << "tem posição" << endl;
                 			code.push_back(search->value);
                 			posCount++;
               			} 
 						else
 						{
-                			cout << "nao tem posição" << endl;
+                			//cout << "nao tem posição" << endl;
                 			int prevPos = search->list;
                 			code.push_back(prevPos);
                 			search->list = posCount;
@@ -357,17 +406,18 @@ void one_pass_algorithm(string codePreprocessed)
             		}
 					else
 					{
-              			cout << "simbolo ainda nao definido" << endl;
-              			SymbolTableElements element = {token, -1, false, posCount};
+              			//cout << "simbolo ainda nao definido" << endl;
+              			SymbolTableElements element = {token, -1, false, posCount, lineCount, false};
               			symbolTable.push_back(element);
               			code.push_back(-1);
               			posCount++;
             		}
             		token = "";
-            		if(opcode != COPY)
-					{
-            			opcodeFlag = false;
-					}
+            		// if(opcode != COPY)
+					// {
+            		// 	opcodeFlag = false;
+					// }
+					wordsCount++;
 				}
           		else
 				{
@@ -377,8 +427,13 @@ void one_pass_algorithm(string codePreprocessed)
 				lastX = x;
           		//cout << "x atual \"" << x getline<< "\""<< endl;
         	}
-        	//cout << lineCount << myText << '\n';      
-			print_vector(code);
+        	if((wordsCount != InstructionTable[opcode - 1].words) && (opcodeFlag))
+			{
+				cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
+			}
+			rotFlag = false;
+			wordsCount = 0;     
+			//print_vector(code);
 		}
     	if(dataSection)
 		{
@@ -390,24 +445,25 @@ void one_pass_algorithm(string codePreprocessed)
         		if(x == ':')
 				{
           			//simbolo
-          			cout << "DATA achei simbolo: " << token << endl;
-        			// auto search = find_if(symbolTable.begin(), symbolTable.end(), 
-        			//              [&token] (SymbolTableElements const& d) { 
-        			//                 return d.symbol == token; 
-        			//              });
+          			//cout << "DATA achei simbolo: " << token << endl;
+        			 auto search = find_if(symbolTable.begin(), symbolTable.end(), 
+        			             [&token] (SymbolTableElements const& d) { 
+        			                return d.symbol == token; 
+        			             });
           			// if (search != symbolTable.end())
 					// {
-            		// 	cout << "simbolo ja definido" << endl;
-            		// 	// FAZER ESSA PARTE DE COLOCAR NA TABELA O VALOR E IR PREENCHENDO OS VALORES
-            		// 	newSymbol = false;
-            		// 	symbolFound = search->symbol;
-            		// 	//search->value = posCount;
-            		// 	//search->def = true;
+					// 	search->def = true;
+            			//cout << "simbolo ja definido" << endl;
+            			// FAZER ESSA PARTE DE COLOCAR NA TABELA O VALOR E IR PREENCHENDO OS VALORES
+            			//newSymbol = false;
+            			//symbolFound = search->symbol;
+            			//search->value = posCount;
+            			
 
           			// }
 					// else
             		//	cout << "simbolo nao definido" << endl;
-            		element = {token, 0, false, -1};
+            		element = {token, 0, true, -1, lineCount, false};
 					symbolFound = token;
             			//symbolTable.push_back(element);
             		//	newSymbol = true;
@@ -416,7 +472,7 @@ void one_pass_algorithm(string codePreprocessed)
 				else if(x == '\n' && constFlag)
 				{
 		        	//verificar se token é int
-		        	cout << "Valor do const: " << token << endl;
+		        	//cout << "Valor do const: " << token << endl;
 					element.value = stoi(token);
 		        	//code.push_back(stoi(token));
 		        	constFlag = false;
@@ -424,7 +480,7 @@ void one_pass_algorithm(string codePreprocessed)
         		}
 				else if((x == ' '|| x == '\n') && token != ":" && token != " " )
 				{
-          			cout << "vendo tipo: \"" << token << "\"" << endl;
+          			//cout << "vendo tipo: \"" << token << "\"" << endl;
           			symbol = token_table(token);
           			switch (symbol)
 					{
@@ -434,6 +490,9 @@ void one_pass_algorithm(string codePreprocessed)
             			case SPACE:
               				element.value = 0;
               				break;
+						default:
+							//erro no space/const
+							cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
           			}
           			token = "";
         		} 
@@ -453,6 +512,7 @@ void one_pass_algorithm(string codePreprocessed)
           	if (search != symbolTable.end())
 			{
 				search->value = element.value;
+				search->def = true;
 			}
 			else
 			{
@@ -464,23 +524,30 @@ void one_pass_algorithm(string codePreprocessed)
 	//Pass through symbol table
 	cout << " Passar pela ST" << endl;
 	print_ST(symbolTable);
-	cout << symbolTable.size() << endl;
+	//cout << symbolTable.size() << endl;
 	for(int i = 0; i < symbolTable.size(); i++)
 	{
-		cout << " Passar pela ST" << endl;
-		if(!symbolTable[i].def)
+		//cout << " Passar pela ST" << endl;
+		if(symbolTable[i].def)
 		{
+			if(symbolTable[i].isRot == false)
+			{
 			cout << symbolTable[i].symbol << endl;
-			code.push_back(symbolTable[i].value);
-			symbol = symbolTable[i].list;
-			symbolTable[i].value = posCount;
-			posCount++;
-			symbolTable[i].def = true;
-			while (symbol != -1){
-        		aux = symbol;
-        		symbol = code[aux];
-        		code[aux] = symbolTable[i].value;
-        	}
+				code.push_back(symbolTable[i].value);
+				symbol = symbolTable[i].list;
+				symbolTable[i].value = posCount;
+				posCount++;
+				symbolTable[i].def = true;
+				while (symbol != -1){
+        			aux = symbol;
+        			symbol = code[aux];
+        			code[aux] = symbolTable[i].value;
+        		}
+			}	
+		} else
+		{
+			//declarações‌ ‌de‌ ‌rótulos‌ ‌ausentes
+			cout << "LINHA: " << symbolTable[i].line << " ERRO SEMÂNTICO" << endl;
 		}
 	}
         		// auto search = find_if(symbolTable.begin(), symbolTable.end(), 
@@ -504,7 +571,12 @@ void one_pass_algorithm(string codePreprocessed)
 int main(int argc, char *argv[]) 
 {
 	string codePreprocessed;
-	//pensar em criar a tabela de instruções
+	//pensar em criar a tabela de instruções ok 
+	// Falta: mensagens de erro ok
+	// guardar vetores e lidar com eles
+	// gerar arquivo de saida texto
+	// checar numero de argumento das instruções ok
+	build_instruction_table();
 	if(argc < 2)
 	{
 		cout << "Arquivo não repassado na linha de comando" << '\n';
