@@ -58,7 +58,7 @@ void print_ST(vector<SymbolTableElements> v)
 	cout << "Symbol Table" << endl;
 	for(int i=0; i<v.size(); ++i)
 	{
-		cout << v[i].symbol << " " << v[i].value << " " << v[i].def << " " << v[i].list[0] << " " << v[i].line << " " << v[i].space << endl;
+		cout << v[i].symbol << " " << v[i].value << " " << v[i].def << " " << v[i].list[0] << " " << v[i].line << " " << v[i].isRot << " " << v[i].space << endl;
 	}
 }
 
@@ -144,6 +144,7 @@ string preprocessing(char* fileName)
 				line.pop_back();
 		}
 		line = line + '\n';
+		//cout << line << endl;
 		codePreprocessed = codePreprocessed + line;
 	}
 
@@ -255,9 +256,9 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 		//cout << myText << endl;
     	if(myText.compare("SECTION TEXT") == 0)
 		{
-			//cout << "entrei na text section" << '\n' << '\n';
-			//print_vector(code);
-			//print_ST(symbolTable);
+			cout << "entrei na text section" << '\n' << '\n';
+			print_vector(code);
+			print_ST(symbolTable);
 			textSection = true;
 			dataSection = false;
 			getline (iss, myText);
@@ -266,9 +267,9 @@ vector<int> one_pass_algorithm(string codePreprocessed)
     	}
 		if(myText.compare("SECTION DATA") == 0)
 		{
-			//cout << "entrei na data section" << '\n' << '\n';
-			//print_vector(code);
-			//print_ST(symbolTable);
+			cout << "entrei na data section" << '\n' << '\n';
+			print_vector(code);
+			print_ST(symbolTable);
 			//cout  << endl;
 			textSection = false;
 			dataSection = true;
@@ -398,7 +399,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
             		} 
 					else
 					{
-              			SymbolTableElements element = {token, posCount, true, {-1}, lineCount, true, -1};
+              			SymbolTableElements element = {token, posCount, true, {-1}, lineCount, true, 0};
               			symbolTable.push_back(element);
             		}
             		//cout << token << endl;
@@ -408,7 +409,11 @@ vector<int> one_pass_algorithm(string codePreprocessed)
           		else if((x == ' ' || x == '\n' || x == ',' || x == '+') && opcodeFlag == true && spaceFlag == false)
 				{	
             		//symbol
-            		cout << "achei simbolo: " << token << endl;
+            		cout << "achei simbolo:" << token << "\"" << endl;
+					if(x == '+')
+					{
+						spaceFlag = true;
+					}
             		//search for symbol in ST
             		auto search = find_if(symbolTable.begin(), symbolTable.end(), 
                     		[&token] (SymbolTableElements const& d) { 
@@ -436,16 +441,16 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 								code.push_back(0);
 								posCount++;
 							}
-							print_ST(symbolTable);
+							//print_ST(symbolTable);
               			}
 						
             		}
-					else
+					else if(!spaceFlag)
 					{
               			cout << "simbolo ainda nao definido" << endl;
-              			SymbolTableElements element = {token, -1, false, {posCount}, lineCount, false, -1};
+              			SymbolTableElements element = {token, -1, false, {posCount}, lineCount, false, 0};
               			symbolTable.push_back(element);
-              			code.push_back(-1);
+              			code.push_back(0);
               			posCount++;
             		}
             		token = "";
@@ -454,10 +459,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
             		// 	opcodeFlag = false;
 					// }
 					wordsCount++;
-					if(x == '+')
-					{
-						spaceFlag = true;
-					}
+					
 				}
 				else if((x == ' ' || x == '\n' || x == ',') && opcodeFlag == true && spaceFlag == true)
 				{
@@ -484,19 +486,24 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 			}
 			rotFlag = false;
 			wordsCount = 0;     
-			//print_vector(code);
+			print_vector(code);
 		}
     	if(dataSection)
 		{
     		myText = myText + "\n";
     		token = "";
+			lastX = '!';
 			SymbolTableElements element;
     		for (auto x: myText)
 			{
+				if(lastX == ';')
+				{
+					break;
+				}
         		if(x == ':')
 				{
           			//simbolo
-          			//cout << "DATA achei simbolo: " << token << endl;
+          			cout << "DATA achei simbolo: " << token << "\"" << endl;
         			//  auto search = find_if(symbolTable.begin(), symbolTable.end(), 
         			//              [&token] (SymbolTableElements const& d) { 
         			//                 return d.symbol == token; 
@@ -520,7 +527,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
             		//	newSymbol = true;
           			token = "";
         		} 
-				else if(x == '\n' && constFlag)
+				else if((x == '\n' || x == ' ') && constFlag)
 				{
 		        	//verificar se token é int
 		        	//cout << "Valor do const: " << token << endl;
@@ -531,7 +538,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
         		}
 				else if((x == ' '|| x == '\n') && token != ":" && token != " " && spaceFlag == false)
 				{
-          			//cout << "vendo tipo: \"" << token << "\"" << endl;
+          			cout << "vendo tipo: \"" << token << "\"" << endl;
           			symbol = token_table(token);
           			switch (symbol)
 					{
@@ -540,7 +547,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
               				break;
             			case SPACE:
               				element.value = 0;
-							spaceFlag == true;
+							spaceFlag = true;
               				break;
 						default:
 							//erro no space/const
@@ -548,8 +555,9 @@ vector<int> one_pass_algorithm(string codePreprocessed)
           			}
           			token = "";
         		} 
-				else if((x == ' '|| x == '\n') && token != ":" && token != " " && spaceFlag == true)
+				else if((x == ' '|| x == '\n') && token != ":" && token != " " && token != "" && spaceFlag == true)
 				{
+					cout << "vendo space: \"" << token << "\"" << endl;
 					element.space = stoi(token);
 					token = "";
 					spaceFlag = false;
@@ -562,6 +570,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 				{
           			token = token + x;
         		}
+				lastX = x;
       		}
 			auto search = find_if(symbolTable.begin(), symbolTable.end(), 
         	 [&symbolFound] (SymbolTableElements const& d) { 
@@ -569,14 +578,17 @@ vector<int> one_pass_algorithm(string codePreprocessed)
         	 });
           	if (search != symbolTable.end())
 			{
+				cout << "achei" << endl;
 				search->value = element.value;
 				search->def = true;
 				search->space = element.space;
 			}
 			else
 			{
+				cout << "n achei:" << symbolFound << "\"" << endl;
       			symbolTable.push_back(element);
 			}
+			spaceFlag = false;
     	}
 		//print_vector(code);
 	}
@@ -590,7 +602,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 		//cout << " Passar pela ST" << endl;
 		if(symbolTable[i].def)
 		{
-			if(symbolTable[i].list[0] != -1)
+			if(symbolTable[i].isRot == false)
 			{
 				cout << symbolTable[i].symbol << endl;
 				aux = posCount;
