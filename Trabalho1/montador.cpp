@@ -115,6 +115,10 @@ string preprocessing(char* fileName)
 		for (auto x: myText)
 		{
 			addChar = true;
+			if(x == ';')
+			{
+				break;
+			}
 			if(x == '\t')
 			{
 				x = ' ';
@@ -131,6 +135,11 @@ string preprocessing(char* fileName)
 			{
 				addChar = false;
 			}
+			if(x == ':' && lastX == ' ')
+			{
+				if(!line.empty())
+				line.pop_back();
+			}
 			if(addChar)
 			{
 				line = line + x;
@@ -143,8 +152,11 @@ string preprocessing(char* fileName)
 			if(!line.empty())
 				line.pop_back();
 		}
-		line = line + '\n';
-		//cout << line << endl;
+		// if(!line.empty())
+		{
+			cout << line << "\"" << endl;
+			line = line + '\n';
+		}
 		codePreprocessed = codePreprocessed + line;
 	}
 
@@ -254,6 +266,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 		std::transform(myText.begin(), myText.end(), myText.begin(), ::toupper);
 		lineCount++;
 		//cout << myText << endl;
+	
     	if(myText.compare("SECTION TEXT") == 0)
 		{
 			cout << "entrei na text section" << '\n' << '\n';
@@ -277,6 +290,11 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 			std::transform(myText.begin(), myText.end(), myText.begin(), ::toupper);
 			lineCount++;
 		}
+	if(myText == "")
+	{
+		cout << "pulei linha: " << lineCount << endl;
+	}
+	else{
 		if(textSection)
 		{
 			myText = myText + "\n";
@@ -536,7 +554,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 		        	constFlag = false;
 		        	token = "";
         		}
-				else if((x == ' '|| x == '\n') && token != ":" && token != " " && spaceFlag == false)
+				else if((x == ' '|| x == '\n') && token != ":" && token != " " && spaceFlag == false && !token.empty())
 				{
           			cout << "vendo tipo: \"" << token << "\"" << endl;
           			symbol = token_table(token);
@@ -591,6 +609,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 			spaceFlag = false;
     	}
 		//print_vector(code);
+	}
 	}
 
 	//Pass through symbol table
