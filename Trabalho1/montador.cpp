@@ -165,6 +165,28 @@ string preprocessing(char* fileName)
 	return codePreprocessed;
 }
 
+bool valid_token(string token, int lineCount)
+{
+	bool tokenFlag = true;
+	if((token[0] >= '0' && token[0] <= '9') )
+	{
+		tokenFlag = false;
+	}
+	std::transform(token.begin(), token.end(), token.begin(), ::toupper);
+	for (int i = 0; i < token.size(); i++)
+	{
+		if((token[i] < 'A' || token[i] > 'Z') && (token[i] < '0' || token[i] > '9') && token[i] != '_')
+		{
+			tokenFlag = false;
+		}
+	}
+	if(!tokenFlag)
+	{
+		cout << "LINHA: " << lineCount << " ERRO LÉXICO" << endl;
+	}
+	return tokenFlag;
+}
+
 int token_table(string token){
 	if(token.compare("ADD") == 0)
 	{
@@ -255,6 +277,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 	char lastX = '!'; //any character different
 	string symbolFound = "";
 	int wordsCount = 0;
+	int lastLine = 0;
 
 	istringstream iss(codePreprocessed);
 
@@ -300,12 +323,22 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 			myText = myText + "\n";
 			token = "";
 			lastX = '!';
-			opcodeFlag = false;
+			//opcodeFlag = false;
         	for (auto x: myText)
 			{
 				if(lastX == ';')
 				{
 					break;
+				}
+				if((x == ' ' ||  x == '\n') && opcodeFlag && !token.empty())
+				{
+					if(token_table(token) != -1 )
+					{
+						//‌instruções‌ ‌com‌ ‌a‌ ‌quantidade‌ ‌de‌ ‌operando‌ ‌errada
+						cout << "LINHA: " << lastLine << " ERRO SINTÁTICO" << endl;
+						wordsCount = 0;
+						opcodeFlag = false;
+					}
 				}
         		if(x == ' ' && (lastX == ' ' || lastX == ':'))
 				{
@@ -314,6 +347,12 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 				else if((x == ' ' || x == '\n') && opcodeFlag == false && !token.empty())
 				{
             		//token
+					if(!valid_token(token, lineCount))
+					{
+						int wordsCount = 0;
+						bool opcodeFlag = false;
+						break;
+					}
             		opcode = token_table(token);
             		switch (opcode)
 					{
@@ -366,7 +405,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
                 			posCount--;
                 			break;
             		}
-            		//cout << "achei opcode: " << token << endl;
+            		cout << "achei opcode: " << token << endl;
             		token = "";
             		posCount++;
 					wordsCount++;
@@ -375,11 +414,17 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 				else if(x == ':')
 				{
             		//rotulo
+					if(!valid_token(token, lineCount))
+					{
+						wordsCount = 0;
+						opcodeFlag = false;
+						break;
+					}
             		cout << "achei rotulo: " << token << endl;
 					if(rotFlag)
 					{
 						//dois‌ ‌rótulos‌ ‌na‌ ‌mesma‌ ‌linha
-						cout << "LINHA: " << lineCount << " ERRO SINTATICO" << endl;
+						cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
 					}
             		auto search = find_if(symbolTable.begin(), symbolTable.end(), 
                     	[&token] (SymbolTableElements const& d) { 
@@ -390,7 +435,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 						if(search->def == true)
 						{
 						//‌declarações‌ ‌de‌ ‌rótulos‌ ‌repetidos
-            			cout << "LINHA: " << lineCount << " ERRO SEMANTICO!" << endl;
+            			cout << "LINHA: " << lineCount << " ERRO SEMANTICO" << endl;
 						}
 						else
 						{
@@ -427,6 +472,12 @@ vector<int> one_pass_algorithm(string codePreprocessed)
           		else if((x == ' ' || x == '\n' || x == ',' || x == '+') && opcodeFlag == true && spaceFlag == false)
 				{	
             		//symbol
+					if(!valid_token(token, lineCount))
+					{
+						int wordsCount = 0;
+						bool opcodeFlag = false;
+						break;
+					}
             		cout << "achei simbolo:" << token << "\"" << endl;
 					if(x == '+')
 					{
@@ -498,13 +549,20 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 				lastX = x;
           		//cout << "x atual \"" << x getline<< "\""<< endl;
         	}
-        	if((wordsCount != InstructionTable[opcode - 1].words) && (opcodeFlag))
+        	// if((wordsCount != InstructionTable[opcode - 1].words) && (opcodeFlag))
+			// {
+			// 	cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
+			// }
+			if((wordsCount == InstructionTable[opcode - 1].words) && (opcodeFlag))
 			{
-				cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
+				cout << "Instrução completa" << endl;
+				opcodeFlag = false;
+				rotFlag = false;
+				wordsCount = 0;     
+				print_vector(code);
 			}
-			rotFlag = false;
-			wordsCount = 0;     
-			print_vector(code);
+			lastLine = lineCount;
+			
 		}
     	if(dataSection)
 		{
@@ -521,6 +579,17 @@ vector<int> one_pass_algorithm(string codePreprocessed)
         		if(x == ':')
 				{
           			//simbolo
+					if(token_table(token) != -1 )
+					{
+						//rótulo inválido
+						cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
+					}
+					if(!valid_token(token, lineCount))
+					{
+						int wordsCount = 0;
+						bool opcodeFlag = false;
+						break;
+					}
           			cout << "DATA achei simbolo: " << token << "\"" << endl;
         			//  auto search = find_if(symbolTable.begin(), symbolTable.end(), 
         			//              [&token] (SymbolTableElements const& d) { 
@@ -609,6 +678,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 			spaceFlag = false;
     	}
 		//print_vector(code);
+		lastLine = lineCount;
 	}
 	}
 
