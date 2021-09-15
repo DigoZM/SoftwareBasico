@@ -89,7 +89,6 @@ void write_file(vector<int> code, char* fileName)
 	string name = string(fileName);
 	size_t pos = name.find(".");
 	newFile = name.substr(0, pos) + ".obj";
-	// cout << newFile << endl;
 	ofile.open(newFile);
 	for (int i = 0; i < code.size(); i++)
 	{
@@ -152,15 +151,11 @@ string preprocessing(char* fileName)
 			if(!line.empty())
 				line.pop_back();
 		}
-		// if(!line.empty())
-		{
-			cout << line << "\"" << endl;
-			line = line + '\n';
-		}
+		//cout << line << "\"" << endl;
+		line = line + '\n';
 		codePreprocessed = codePreprocessed + line;
 	}
 
-	//cout << codePreprocessed;
 	MyReadFile.close();
 	return codePreprocessed;
 }
@@ -281,8 +276,6 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 
 	istringstream iss(codePreprocessed);
 
-//fazer uma passagem pra tirar tabulações e espaços
-
 
 	while (getline (iss, myText)) // Read line by line till it reaches end of file
 	{ 
@@ -292,9 +285,8 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 	
     	if(myText.compare("SECTION TEXT") == 0)
 		{
-			cout << "entrei na text section" << '\n' << '\n';
-			print_vector(code);
-			print_ST(symbolTable);
+			//print_vector(code);
+			//print_ST(symbolTable);
 			textSection = true;
 			dataSection = false;
 			getline (iss, myText);
@@ -303,389 +295,345 @@ vector<int> one_pass_algorithm(string codePreprocessed)
     	}
 		if(myText.compare("SECTION DATA") == 0)
 		{
-			cout << "entrei na data section" << '\n' << '\n';
-			print_vector(code);
-			print_ST(symbolTable);
-			//cout  << endl;
+			//print_vector(code);
+			//print_ST(symbolTable);
 			textSection = false;
 			dataSection = true;
 			getline (iss, myText);
 			std::transform(myText.begin(), myText.end(), myText.begin(), ::toupper);
 			lineCount++;
 		}
-	if(myText == "")
-	{
-		cout << "pulei linha: " << lineCount << endl;
-	}
-	else{
-		if(textSection)
+		if(myText != "")
 		{
-			myText = myText + "\n";
-			token = "";
-			lastX = '!';
-			//opcodeFlag = false;
-        	for (auto x: myText)
+			if(textSection)
 			{
-				if(lastX == ';')
+				myText = myText + "\n";
+				token = "";
+				lastX = '!';
+				//opcodeFlag = false;
+    	    	for (auto x: myText)
 				{
-					break;
-				}
-				if((x == ' ' ||  x == '\n') && opcodeFlag && !token.empty())
-				{
-					if(token_table(token) != -1 )
+					if(lastX == ';')
 					{
-						//‌instruções‌ ‌com‌ ‌a‌ ‌quantidade‌ ‌de‌ ‌operando‌ ‌errada
-						cout << "LINHA: " << lastLine << " ERRO SINTÁTICO" << endl;
-						wordsCount = 0;
-						opcodeFlag = false;
-					}
-				}
-        		if(x == ' ' && (lastX == ' ' || lastX == ':'))
-				{
-            		token = "";
-          		}
-				else if((x == ' ' || x == '\n') && opcodeFlag == false && !token.empty())
-				{
-            		//token
-					if(!valid_token(token, lineCount))
-					{
-						int wordsCount = 0;
-						bool opcodeFlag = false;
 						break;
 					}
-            		opcode = token_table(token);
-            		switch (opcode)
+					if((x == ' ' ||  x == '\n') && opcodeFlag && !token.empty())
 					{
-            			case ADD:
-                			code.push_back(ADD);
-                			break;
-            			case SUB:
-                			code.push_back(SUB);
-                			break;
-            			case MUL:
-                			code.push_back(MUL);
-                			break;
-            			case DIV:
-                			code.push_back(DIV);
-                			break;
-            			case JMP:
-                			code.push_back(JMP);
-                			break;
-            			case JMPN:
-                			code.push_back(JMPN);
-                			break;
-            			case JMPP:
-                			code.push_back(JMPP);
-                			break;
-            			case JMPZ:
-                			code.push_back(JMPZ);
-                			break;
-            			case COPY:
-                			code.push_back(COPY);
-                			break;
-            			case LOAD:
-                			code.push_back(LOAD);
-                			break;
-            			case STORE:
-                			code.push_back(STORE);
-                			break;
-            			case INPUT:
-                			code.push_back(INPUT);
-                			break;
-            			case OUTPUT:
-                			code.push_back(OUTPUT);
-                			break;
-            			case STOP:
-                			code.push_back(STOP);
-                			break;
-            			default:
-							//‌instruções‌ ‌inválidas
-                			cout << "LINHA: " << lineCount << " ERRO SINTATICO" << endl;
-                			cout << "\"" << token << "\"" << endl;
-                			posCount--;
-                			break;
-            		}
-            		cout << "achei opcode: " << token << endl;
-            		token = "";
-            		posCount++;
-					wordsCount++;
-            		opcodeFlag = true;
-        		}
-				else if(x == ':')
-				{
-            		//rotulo
-					if(!valid_token(token, lineCount))
-					{
-						wordsCount = 0;
-						opcodeFlag = false;
-						break;
-					}
-            		cout << "achei rotulo: " << token << endl;
-					if(rotFlag)
-					{
-						//dois‌ ‌rótulos‌ ‌na‌ ‌mesma‌ ‌linha
-						cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
-					}
-            		auto search = find_if(symbolTable.begin(), symbolTable.end(), 
-                    	[&token] (SymbolTableElements const& d) { 
-                        	return d.symbol == token; 
-                    	});
-            		if (search != symbolTable.end())
-					{
-						if(search->def == true)
+						if(token_table(token) != -1 )
 						{
-						//‌declarações‌ ‌de‌ ‌rótulos‌ ‌repetidos
-            			cout << "LINHA: " << lineCount << " ERRO SEMANTICO" << endl;
+							//‌instruções‌ ‌com‌ ‌a‌ ‌quantidade‌ ‌de‌ ‌operando‌ ‌errada
+							cout << "LINHA: " << lastLine << " ERRO SINTÁTICO" << endl;
+							wordsCount = 0;
+							opcodeFlag = false;
 						}
-						else
+					}
+    	    		if(x == ' ' && (lastX == ' ' || lastX == ':'))
+					{
+    	        		token = "";
+    	      		}
+					else if((x == ' ' || x == '\n') && opcodeFlag == false && !token.empty())
+					{
+    	        		//token
+						if(!valid_token(token, lineCount))
 						{
-							cout << posCount << endl;
-							print_ST(symbolTable);
-							//VOLTAR PARA COLOCAR OS LABELS QUANDO ACHAR O ROTULO
-						// 	symbol = search->list[0];
-							search->value = posCount;
-						// 	search->def = true;
-							search->isRot = true;
-							for(int i = 0; i < search->list.size(); i++)
-							{
-								code[search->list[i]] = search->value;
-							}
-							search->list[0] = -1;
-							search->def = true;
-						// 	while (symbol != -1)
-						// 	{
-        				// 		aux = symbol;
-        				// 		symbol = code[aux];
-        				// 		code[aux] = search->value;
-        				// 	}
+							int wordsCount = 0;
+							bool opcodeFlag = false;
+							break;
 						}
-            		} 
-					else
-					{
-              			SymbolTableElements element = {token, posCount, true, {-1}, lineCount, true, 0};
-              			symbolTable.push_back(element);
-            		}
-            		//cout << token << endl;
-            		token = "";
-					rotFlag = true;
-          		}
-          		else if((x == ' ' || x == '\n' || x == ',' || x == '+') && opcodeFlag == true && spaceFlag == false)
-				{	
-            		//symbol
-					if(!valid_token(token, lineCount))
-					{
-						int wordsCount = 0;
-						bool opcodeFlag = false;
-						break;
-					}
-            		cout << "achei simbolo:" << token << "\"" << endl;
-					if(x == '+')
-					{
-						spaceFlag = true;
-					}
-            		//search for symbol in ST
-            		auto search = find_if(symbolTable.begin(), symbolTable.end(), 
-                    		[&token] (SymbolTableElements const& d) { 
-                        		return d.symbol == token; 
-                    	});
-            		if (search != symbolTable.end())
-					{
-              			cout << "simbolo ja definido" << endl;
-              			if(search->def && search->isRot == true)
+    	        		opcode = token_table(token);
+    	        		switch (opcode)
 						{
-                			//cout << "tem posição" << endl;
-                			code.push_back(search->value);
-                			posCount++;
-              			} 
-						else
+    	        			case ADD:
+    	            			code.push_back(ADD);
+    	            			break;
+    	        			case SUB:
+    	            			code.push_back(SUB);
+    	            			break;
+    	        			case MUL:
+    	            			code.push_back(MUL);
+    	            			break;
+    	        			case DIV:
+    	            			code.push_back(DIV);
+    	            			break;
+    	        			case JMP:
+    	            			code.push_back(JMP);
+    	            			break;
+    	        			case JMPN:
+    	            			code.push_back(JMPN);
+    	            			break;
+    	        			case JMPP:
+    	            			code.push_back(JMPP);
+    	            			break;
+    	        			case JMPZ:
+    	            			code.push_back(JMPZ);
+    	            			break;
+    	        			case COPY:
+    	            			code.push_back(COPY);
+    	            			break;
+    	        			case LOAD:
+    	            			code.push_back(LOAD);
+    	            			break;
+    	        			case STORE:
+    	            			code.push_back(STORE);
+    	            			break;
+    	        			case INPUT:
+    	            			code.push_back(INPUT);
+    	            			break;
+    	        			case OUTPUT:
+    	            			code.push_back(OUTPUT);
+    	            			break;
+    	        			case STOP:
+    	            			code.push_back(STOP);
+    	            			break;
+    	        			default:
+								//‌instruções‌ ‌inválidas
+    	            			cout << "LINHA: " << lineCount << " ERRO SINTATICO" << endl;
+    	            			//cout << "\"" << token << "\"" << endl;
+    	            			posCount--;
+    	            			break;
+    	        		}
+    	        		//cout << "achei opcode: " << token << endl;
+    	        		token = "";
+    	        		posCount++;
+						wordsCount++;
+    	        		opcodeFlag = true;
+    	    		}
+					else if(x == ':')
+					{
+    	        		//rotulo
+						if(!valid_token(token, lineCount))
 						{
-                			cout << "nao tem posição no " << posCount << endl;
-                			// int prevPos = search->list;
-                			// code.push_back(prevPos);
-                			// search->list = posCount;
-                			// posCount++;
-							search->list.insert(search->list.begin(), posCount);
-							if(!spaceFlag)
-							{
-								code.push_back(0);
-								posCount++;
-							}
-							//print_ST(symbolTable);
-              			}
-						
-            		}
-					else if(!spaceFlag)
-					{
-              			cout << "simbolo ainda nao definido" << endl;
-              			SymbolTableElements element = {token, -1, false, {posCount}, lineCount, false, 0};
-              			symbolTable.push_back(element);
-              			code.push_back(0);
-              			posCount++;
-            		}
-            		token = "";
-            		// if(opcode != COPY)
-					// {
-            		// 	opcodeFlag = false;
-					// }
-					wordsCount++;
-					
-				}
-				else if((x == ' ' || x == '\n' || x == ',') && opcodeFlag == true && spaceFlag == true)
-				{
-					// auto search = find_if(symbolTable.begin(), symbolTable.end(), 
-                    // 		[&symbolFound] (SymbolTableElements const& d) { 
-                    //     		return d.symbol == symbolFound; 
-                    // 	});
-					// search->space = stoi(token);
-					code.push_back(stoi(token));
-					posCount++;
-					spaceFlag = false;
-				}
-          		else
-				{
-            		token = token + x;
-            		//cout << '\"' <<  token << '\"'<< endl;
-          		}
-				lastX = x;
-          		//cout << "x atual \"" << x getline<< "\""<< endl;
-        	}
-        	// if((wordsCount != InstructionTable[opcode - 1].words) && (opcodeFlag))
-			// {
-			// 	cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
-			// }
-			if((wordsCount == InstructionTable[opcode - 1].words) && (opcodeFlag))
-			{
-				cout << "Instrução completa" << endl;
-				opcodeFlag = false;
-				rotFlag = false;
-				wordsCount = 0;     
-				print_vector(code);
-			}
-			lastLine = lineCount;
-			
-		}
-    	if(dataSection)
-		{
-    		myText = myText + "\n";
-    		token = "";
-			lastX = '!';
-			SymbolTableElements element;
-    		for (auto x: myText)
-			{
-				if(lastX == ';')
-				{
-					break;
-				}
-        		if(x == ':')
-				{
-          			//simbolo
-					if(token_table(token) != -1 )
-					{
-						//rótulo inválido
-						cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
-					}
-					if(!valid_token(token, lineCount))
-					{
-						int wordsCount = 0;
-						bool opcodeFlag = false;
-						break;
-					}
-          			cout << "DATA achei simbolo: " << token << "\"" << endl;
-        			//  auto search = find_if(symbolTable.begin(), symbolTable.end(), 
-        			//              [&token] (SymbolTableElements const& d) { 
-        			//                 return d.symbol == token; 
-        			//              });
-          			// if (search != symbolTable.end())
-					// {
-					// 	search->def = true;
-            			//cout << "simbolo ja definido" << endl;
-            			// FAZER ESSA PARTE DE COLOCAR NA TABELA O VALOR E IR PREENCHENDO OS VALORES
-            			//newSymbol = false;
-            			//symbolFound = search->symbol;
-            			//search->value = posCount;
-            			
-
-          			// }
-					// else
-            		//	cout << "simbolo nao definido" << endl;
-            		element = {token, 0, true, {-1}, lineCount};
-					symbolFound = token;
-            			//symbolTable.push_back(element);
-            		//	newSymbol = true;
-          			token = "";
-        		} 
-				else if((x == '\n' || x == ' ') && constFlag)
-				{
-		        	//verificar se token é int
-		        	//cout << "Valor do const: " << token << endl;
-					element.value = stoi(token);
-		        	//code.push_back(stoi(token));
-		        	constFlag = false;
-		        	token = "";
-        		}
-				else if((x == ' '|| x == '\n') && token != ":" && token != " " && spaceFlag == false && !token.empty())
-				{
-          			cout << "vendo tipo: \"" << token << "\"" << endl;
-          			symbol = token_table(token);
-          			switch (symbol)
-					{
-            			case CONST:
-              				constFlag = true;
-              				break;
-            			case SPACE:
-              				element.value = 0;
-							spaceFlag = true;
-              				break;
-						default:
-							//erro no space/const
+							wordsCount = 0;
+							opcodeFlag = false;
+							break;
+						}
+    	        		//cout << "achei rotulo: " << token << endl;
+						if(rotFlag)
+						{
+							//dois‌ ‌rótulos‌ ‌na‌ ‌mesma‌ ‌linha
 							cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
-          			}
-          			token = "";
-        		} 
-				else if((x == ' '|| x == '\n') && token != ":" && token != " " && token != "" && spaceFlag == true)
+						}
+    	        		auto search = find_if(symbolTable.begin(), symbolTable.end(), 
+    	                	[&token] (SymbolTableElements const& d) { 
+    	                    	return d.symbol == token; 
+    	                	});
+    	        		if (search != symbolTable.end())
+						{
+							if(search->def == true)
+							{
+							//‌declarações‌ ‌de‌ ‌rótulos‌ ‌repetidos
+    	        			cout << "LINHA: " << lineCount << " ERRO SEMANTICO" << endl;
+							}
+							else
+							{
+								search->value = posCount;
+							// 	search->def = true;
+								search->isRot = true;
+								for(int i = 0; i < search->list.size(); i++)
+								{
+									code[search->list[i]] = search->value;
+								}
+								search->list[0] = -1;
+								search->def = true;
+							}
+    	        		} 
+						else
+						{
+    	          			SymbolTableElements element = {token, posCount, true, {-1}, lineCount, true, 0};
+    	          			symbolTable.push_back(element);
+    	        		}
+    	        		//cout << token << endl;
+    	        		token = "";
+						rotFlag = true;
+    	      		}
+    	      		else if((x == ' ' || x == '\n' || x == ',' || x == '+') && opcodeFlag == true && spaceFlag == false)
+					{	
+    	        		//symbol
+						if(!valid_token(token, lineCount))
+						{
+							int wordsCount = 0;
+							bool opcodeFlag = false;
+							break;
+						}
+    	        		//cout << "achei simbolo:" << token << "\"" << endl;
+						if(x == '+')
+						{
+							spaceFlag = true;
+						}
+    	        		//search for symbol in ST
+    	        		auto search = find_if(symbolTable.begin(), symbolTable.end(), 
+    	                		[&token] (SymbolTableElements const& d) { 
+    	                    		return d.symbol == token; 
+    	                	});
+    	        		if (search != symbolTable.end())
+						{
+    	          			//cout << "simbolo ja definido" << endl;
+    	          			if(search->def && search->isRot == true)
+							{
+    	            			//cout << "tem posição" << endl;
+    	            			code.push_back(search->value);
+    	            			posCount++;
+    	          			} 
+							else
+							{
+								search->list.insert(search->list.begin(), posCount);
+								if(!spaceFlag)
+								{
+									code.push_back(0);
+									posCount++;
+								}
+								//print_ST(symbolTable);
+    	          			}
+
+    	        		}
+						else if(!spaceFlag)
+						{
+    	          			//cout << "simbolo ainda nao definido" << endl;
+    	          			SymbolTableElements element = {token, -1, false, {posCount}, lineCount, false, 0};
+    	          			symbolTable.push_back(element);
+    	          			code.push_back(0);
+    	          			posCount++;
+    	        		}
+    	        		token = "";
+						wordsCount++;
+
+					}
+					else if((x == ' ' || x == '\n' || x == ',') && opcodeFlag == true && spaceFlag == true)
+					{
+						//cout << token << endl;
+						code.push_back(stoi(token));
+						posCount++;
+						spaceFlag = false;
+					}
+    	      		else
+					{
+    	        		token = token + x;
+    	        		//cout << '\"' <<  token << '\"'<< endl;
+    	      		}
+					lastX = x;
+    	      		//cout << "x atual \"" << x getline<< "\""<< endl;
+    	    	}
+				if((wordsCount == InstructionTable[opcode - 1].words) && (opcodeFlag))
 				{
-					cout << "vendo space: \"" << token << "\"" << endl;
-					element.space = stoi(token);
-					token = "";
-					spaceFlag = false;
+					//cout << "Instrução completa" << endl;
+					opcodeFlag = false;
+					rotFlag = false;
+					wordsCount = 0;     
+					//print_vector(code);
 				}
-				if(x == ' ')
-				{
-          			token = "";
-        		}
-         		else
-				{
-          			token = token + x;
-        		}
-				lastX = x;
-      		}
-			auto search = find_if(symbolTable.begin(), symbolTable.end(), 
-        	 [&symbolFound] (SymbolTableElements const& d) { 
-        	    return d.symbol == symbolFound; 
-        	 });
-          	if (search != symbolTable.end())
-			{
-				cout << "achei" << endl;
-				search->value = element.value;
-				search->def = true;
-				search->space = element.space;
+				lastLine = lineCount;
+
 			}
-			else
+    		if(dataSection)
 			{
-				cout << "n achei:" << symbolFound << "\"" << endl;
-      			symbolTable.push_back(element);
-			}
-			spaceFlag = false;
-    	}
-		//print_vector(code);
-		lastLine = lineCount;
-	}
+    			myText = myText + "\n";
+    			token = "";
+				lastX = '!';
+				SymbolTableElements element;
+    			for (auto x: myText)
+				{
+					if(lastX == ';')
+					{
+						break;
+					}
+    	    		if(x == ':')
+					{
+    	      			//simbolo
+						if(token_table(token) != -1 )
+						{
+							//rótulo inválido
+							cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
+						}
+						if(!valid_token(token, lineCount))
+						{
+							int wordsCount = 0;
+							bool opcodeFlag = false;
+							break;
+						}
+    	        		element = {token, 0, true, {-1}, lineCount};
+						symbolFound = token;
+    	      			token = "";
+    	    		} 
+					else if((x == '\n' || x == ' ') && constFlag)
+					{
+			        	//verificar se token é int
+			        	//cout << "Valor do const: " << token << endl;
+						//cout << token << endl;
+						try{
+							    element.space = stoi(token);
+							}
+							catch(std::exception& e){
+							    cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
+							}
+			        	//code.push_back(stoi(token));
+			        	constFlag = false;
+			        	token = "";
+    	    		}
+					else if((x == ' '|| x == '\n') && token != ":" && token != " " && spaceFlag == false && !token.empty())
+					{
+    	      			//cout << "vendo tipo: \"" << token << "\"" << endl;
+    	      			symbol = token_table(token);
+    	      			switch (symbol)
+						{
+    	        			case CONST:
+    	          				constFlag = true;
+    	          				break;
+    	        			case SPACE:
+    	          				element.value = 0;
+								spaceFlag = true;
+    	          				break;
+							default:
+								//erro no space/const
+								cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
+    	      			}
+    	      			token = "";
+    	    		} 
+					else if((x == ' '|| x == '\n') && token != ":" && token != " " && token != "" && spaceFlag == true)
+					{
+						//cout << "vendo space: \"" << token << "\"" << endl;
+						try{
+							    element.space = stoi(token);
+							}
+							catch(std::exception& e){
+							    cout << "LINHA: " << lineCount << " ERRO SINTÁTICO" << endl;
+							}
+						
+						token = "";
+						spaceFlag = false;
+					}
+					if(x == ' ' || x == ':') 
+					{
+    	      			token = "";
+    	    		}
+    	     		else
+					{
+    	      			token = token + x;
+    	    		}
+					lastX = x;
+    	  		}
+				auto search = find_if(symbolTable.begin(), symbolTable.end(), 
+    	    	 [&symbolFound] (SymbolTableElements const& d) { 
+    	    	    return d.symbol == symbolFound; 
+    	    	 });
+    	      	if (search != symbolTable.end())
+				{
+					//cout << "achei" << endl;
+					search->value = element.value;
+					search->def = true;
+					search->space = element.space;
+				}
+				else
+				{
+					//cout << "n achei:" << symbolFound << "\"" << endl;
+    	  			symbolTable.push_back(element);
+				}
+				spaceFlag = false;
+    		}
+			//print_vector(code);
+			lastLine = lineCount;
+		}
 	}
 
-	//Pass through symbol table
-	cout << " Passar pela ST" << endl;
-	print_ST(symbolTable);
-	//cout << symbolTable.size() << endl;
 	for(int i = 0; i < symbolTable.size(); i++)
 	{
 		//cout << " Passar pela ST" << endl;
@@ -693,7 +641,7 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 		{
 			if(symbolTable[i].isRot == false)
 			{
-				cout << symbolTable[i].symbol << endl;
+				//cout << symbolTable[i].symbol << endl;
 				aux = posCount;
 				for (int j = 0; j < symbolTable[i].space + 1; j++)
 				{
@@ -707,18 +655,10 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 					{
 						aux = code[symbolTable[i].list[j]];
 						code[symbolTable[i].list[j]] = symbolTable[i].value + aux;
-						cout << symbolTable[i].list[j] << endl;
+						//cout << symbolTable[i].list[j] << endl;
 					}
 				}
-				// symbol = symbolTable[i].list;
-				// symbolTable[i].value = posCount;
-				// posCount++;
-				// symbolTable[i].def = true;
-				// while (symbol != -1){
-        		// 	aux = symbol;
-        		// 	symbol = code[aux];
-        		// 	code[aux] = symbolTable[i].value;
-        		// }
+
 			}	
 		} else
 		{
@@ -726,45 +666,17 @@ vector<int> one_pass_algorithm(string codePreprocessed)
 			cout << "LINHA: " << symbolTable[i].line << " ERRO SEMÂNTICO" << endl;
 		}
 	}
-        		// auto search = find_if(symbolTable.begin(), symbolTable.end(), 
-        		//                [&symbolFound] (SymbolTableElements const& d) { 
-        		//                   return d.symbol == symbolFound; 
-        		//                });
-        		// symbol = search->list;
-        		// //cout << "vou colocar o " << symbol << " no " << posCount << endl;
-        		// while (symbol != -1)
-				// {
-          		// 	aux = symbol;
-          		// 	symbol = code[aux];
-          		// 	code[aux] = search->value;
-        		// }
-
-  	print_vector(code);
-  	print_ST(symbolTable);
+  	//print_vector(code);
+  	//print_ST(symbolTable);
 	return code;
   	
 }
-// struct teste{
-// 	int a;
-// 	vector<int> b;
-// 	//int b;
-// };
 
 int main(int argc, char *argv[]) 
 {
 	string codePreprocessed;
 	vector<int> code;
-	// vector<teste> c;
-	// teste d;
-	// d = {1, {2}};
-	// c.push_back(d);
-	// c[0].b.push_back(4);
-	// cout << c[0].a << c[0].b[0] << c[0].b[1] << endl;
-	//pensar em criar a tabela de instruções ok 
-	// Falta: mensagens de erro ok
-	// guardar vetores e lidar com eles
-	// gerar arquivo de saida texto ok
-	// checar numero de argumento das instruções ok
+
 	build_instruction_table();
 	if(argc < 2)
 	{

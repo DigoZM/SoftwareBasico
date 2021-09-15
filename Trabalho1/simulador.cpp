@@ -28,7 +28,7 @@ vector<int> read_code(char* fileName)
 	string myText;
 	ifstream MyReadFile(fileName);
     vector<int> code;
-    string token;
+    string token = "";
 
 	while (getline (MyReadFile, myText))
 	{
@@ -195,6 +195,7 @@ void simulator(vector<int> code)
         {
             break;
         }
+        cout << "+++++++++++++++++++++" << endl;
     }
 
 }
