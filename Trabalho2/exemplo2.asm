@@ -1,0 +1,31 @@
+;Exemplo 2
+;Escreve o numero da entrada em binario
+;12 29 10 29 4 28 11 30 3 28 11 31 10 29 2 31 11 31 13 31 9 30 29 10 29 7 4 14 2 0 0 0 
+
+
+ 
+SECtION TEXT
+INPUT OLD_DATA    
+L1: load old_data
+ DIV DOIS
+STORE                         NEW_DATA
+  MUL DOIS
+STORE TMP_DATA
+LOAD OLD_DATA
+SUB TMP_DATA
+STORE 
+TMP_DATA
+OUTPUT TMP_DATA
+COPY NEW_DATA,OLD_DATA
+LOAD OLD_DATA
+JMPP L1
+STOP
+;Comentário 3
+;
+
+    SECTION DATa
+DOIS: CONST 2
+OLD_DATA:        SPACE;Comentário 1
+NEW_DATA: space
+TMP_DATA: SPACE
+;Comentário 2
